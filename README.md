@@ -1,6 +1,9 @@
 # scala-akka-showcase
 Scala Akka Showcase
 
+Getting started with Akka on Scala
+
+https://developer.lightbend.com/guides/akka-quickstart-scala/
 
 # SBT
 
