@@ -8,6 +8,7 @@ import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import com.example.OrderProcessor.Order
 import com.example.Shipper.Shipment
+import com.example.Notifier.Notification
 
 object Product extends Enumeration {
   val Jacket, Sneakers, Umbrella, Socks = Value
@@ -19,12 +20,11 @@ object OrderProcessor {
 
   def apply(): Behavior[Order] = Behaviors.setup { context =>
     var shipper = context.spawn(Shipper(), "shipper")
+    var notifier = context.spawn(Notifier(), "notifier")
 
     Behaviors.receiveMessage { message =>
       context.log.info(message.toString())
-
-      shipper ! Shipper.Shipment(message.id, message.produkt, message.number)
-
+      shipper ! Shipper.Shipment(message.id, message.produkt, message.number, notifier)
       Behaviors.same
     }
   }
@@ -33,13 +33,25 @@ object OrderProcessor {
 
 object Shipper {
 
-  final case class Shipment(orderid: Int, produkt: Product.Value, number: Int)
+  final case class Shipment(orderid: Int, produkt: Product.Value, number: Int, reply: ActorRef[Notification])
 
   def apply(): Behavior[Shipper.Shipment] = Behaviors.receive {
     (context, message) =>
-    context.log.info("Shipping " + message.toString())
+    context.log.info(message.toString())
+    message.reply ! Notification(message.orderid, true)
     Behaviors.same
   }
+}
+
+object Notifier {
+
+  final case class Notification(orderId: Int, shipmentSuccess: Boolean)
+
+  def apply(): Behavior[Notification] = Behaviors.receive { (context, message) =>
+    context.log.info(message.toString())
+    Behaviors.same
+  }
+
 }
 
 //#main-class
